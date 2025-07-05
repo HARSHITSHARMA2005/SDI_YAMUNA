@@ -1,12 +1,55 @@
-# React + Vite
+# 🌊 Yamuna Pollution Monitoring System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack web application that empowers government officials and citizens to monitor, report, and take action on pollution in the Yamuna River using AI, real-time data, and complaint systems.
 
-Currently, two official plugins are available:
+🔗 **Live Site**: [https://sdi-finals.vercel.app](https://sdi-finals.vercel.app)  
+🧠 **Backend**: [https://sdi-finals.onrender.com](https://sdi-finals.onrender.com)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## Expanding the ESLint configuration
+## 🚀 Features
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- ✅ **Role-based Login** for Officials & Citizens
+- 🧪 **Pollution Monitoring** with dynamic map & ML classification (Red/Yellow/Green)
+- 📍 Real-time Yamuna Pollution Map
+- 📊 Dashboard for visualizing metrics like pH, Turbidity, Ammonia, etc.
+- 📢 Complaint System for users with reward option
+- 🛠 Admin panel to view and resolve complaints
+- 📈 Data sourced from CSV & visualized in table
+
+---
+
+## 🧰 Tech Stack
+
+- **Frontend**: React + Vite + Tailwind CSS
+- **Backend**: Node.js + Express
+- **Database**: MongoDB Atlas
+- **Map**: Folium (Python)
+- **Deployment**: Vercel (frontend), Render (backend)
+
+---
+
+## 💡 How It Works
+
+1. 🚁 IoT-enabled drone collects water data
+2. 📊 ML Model classifies water status
+3. 🗺 Map and table updated in government dashboard
+4. 🧑‍🤝‍🧑 Citizens raise complaints with specific location & details
+5. ✅ Officials resolve complaints via their panel
+
+---
+
+## 📸 Preview
+
+![Hero Section](public/preview.png) <!-- Add screenshot if you have -->
+
+---
+
+## 🧑‍💻 Developed By
+
+**Harshit Sharma**  
+[GitHub](https://github.com/HARSHITSHARMA2005)
+
+---
+
+
