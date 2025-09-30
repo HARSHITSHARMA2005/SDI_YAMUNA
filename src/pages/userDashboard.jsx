@@ -44,7 +44,7 @@ function UserDashboard() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      alert("🎉 Complaint submitted! You've earned 10 Clean Yamuna Points 🌱");
+      alert("🎉 Complaint submitted! You've earned 10 Clean Ground Water Points 🌱");
       setFormData({
         fullName: '',
         phone: '',
@@ -128,7 +128,7 @@ function UserDashboard() {
 
           {/* Location */}
           <div>
-            <label className="block text-blue-800 font-medium mb-1">Location near Yamuna</label>
+            <label className="block text-blue-800 font-medium mb-1">Location near Ground Water</label>
             <input
               type="text"
               name="location"
