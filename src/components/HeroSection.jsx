@@ -5,14 +5,14 @@ const HeroSection = () => {
   const [textIndex, setTextIndex] = useState(0);
   const navigate = useNavigate();
 
-  const texts = [
-    "The Yamuna is India's longest tributary, spanning 1,376 km.",
-    "Yamuna supplies about 70% of Delhi's water",
-    "Faces severe pollution from untreated sewage and industrial waste.",
-    "Highly revered in Hinduism, with its confluence with the Ganges at Prayagraj being a sacred site.",
-    "Major tributaries include the Chambal, Sindh, Betwa, and Ken.",
-    "Covers a vast area across several states, including Uttarakhand, Haryana, and Uttar Pradesh.",
-  ];
+const texts = [
+  "Groundwater is the largest source of fresh water available to humans after ice caps and glaciers.",
+  "In India, groundwater meets about 60% of irrigation needs and 85% of rural drinking water demand.",
+  "Over-extraction has led to declining water tables and depletion in many regions.",
+  "Groundwater contamination from arsenic, fluoride, and industrial waste poses major health risks.",
+  "It is replenished naturally through rainfall infiltration and artificial recharge structures.",
+  "Groundwater plays a vital role in sustaining rivers, lakes, and wetlands during dry seasons."
+];
 
   const handleNextText = () => {
     setTextIndex((yo) => (yo + 1) % texts.length);
@@ -38,10 +38,10 @@ const HeroSection = () => {
       <div className="absolute top-0 left-0 w-full h-full flex items-start justify-start text-white px-6">
         <div className="max-w-xl text-left mt-6">
           <h1 className="text-5xl py-2 md:text-8xl font-bold mb-4">
-            Revitalize Yamuna, Revitalize Life.
+            Groundwater, Life’s Hidden Power.
           </h1>
           <p className="text-2xl md:text-4xl mb-6">
-            S.A.F Drones: Flying Towards a Cleaner Yamuna.
+            S.A.F Drones: Flying Towards a Cleaner Ground Water.
           </p>
           <button
             onClick={handleLoginRedirect}

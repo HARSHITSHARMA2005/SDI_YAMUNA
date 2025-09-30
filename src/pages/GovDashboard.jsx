@@ -59,7 +59,7 @@ function GovDashboard() {
 
         {/* Map */}
         <div className="bg-white bg-opacity-80 backdrop-blur-md rounded-2xl shadow-2xl p-6 border border-blue-300">
-          <h3 className="text-2xl font-semibold text-blue-700 mb-4">📍 Yamuna Pollution Map</h3>
+          <h3 className="text-2xl font-semibold text-blue-700 mb-4">📍 Ground Water Pollution Map</h3>
           <iframe
             src={`${import.meta.env.VITE_BACKEND_URL}/api/map`}
             width="100%"
