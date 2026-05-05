@@ -46,4 +46,27 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
+// Mark complaint as resolved (Gov only)
+router.put('/:id/resolve', authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== 'government') {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const complaint = await Complaint.findByIdAndUpdate(
+      req.params.id,
+      { resolved: true },
+      { new: true }
+    );
+
+    if (!complaint) {
+      return res.status(404).json({ message: 'Complaint not found' });
+    }
+
+    res.json(complaint);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to resolve complaint' });
+  }
+});
+
 export default router;
