@@ -24,107 +24,50 @@ const HeroSection = () => {
   const handlePrev = () => setTextIndex((i) => (i - 1 + texts.length) % texts.length);
   const handleNext = () => setTextIndex((i) => (i + 1) % texts.length);
 
-  // Bubble positions (stable, not random so no re-render flicker)
-  const bubbles = [
-    { size: 12, left: "8%",  delay: "0s",   dur: "6s"  },
-    { size: 20, left: "18%", delay: "1.2s", dur: "8s"  },
-    { size: 8,  left: "30%", delay: "0.5s", dur: "5s"  },
-    { size: 16, left: "45%", delay: "2s",   dur: "7s"  },
-    { size: 10, left: "60%", delay: "0.8s", dur: "6.5s"},
-    { size: 22, left: "72%", delay: "1.5s", dur: "9s"  },
-    { size: 6,  left: "85%", delay: "0.3s", dur: "4.5s"},
-    { size: 14, left: "92%", delay: "2.5s", dur: "7.5s"},
-  ];
-
   return (
     <div className="relative h-screen overflow-hidden">
 
-      {/* ── Deep layered water background ── */}
-      <div className="absolute inset-0 z-0"
-        style={{
-          background: "linear-gradient(180deg, #bae6fd 0%, #7dd3fc 20%, #38bdf8 50%, #0ea5e9 75%, #0284c7 100%)",
-        }}
-      >
-        {/* Radial light caustics */}
-        <div className="absolute inset-0" style={{
-          background: "radial-gradient(ellipse 80% 60% at 30% 20%, rgba(224,242,254,0.5) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 75% 60%, rgba(186,230,255,0.35) 0%, transparent 55%)",
-        }} />
+      {/* ── Solid dark base (shows only if video fails to load) ── */}
+      <div className="absolute inset-0 z-0" style={{ background: "#071a2e" }} />
 
-        {/* Floating bubbles */}
-        {bubbles.map((b, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full"
-            style={{
-              width: b.size,
-              height: b.size,
-              left: b.left,
-              bottom: `${10 + (i * 7) % 40}%`,
-              background: "radial-gradient(circle at 35% 35%, rgba(255,255,255,0.8), rgba(186,230,255,0.3))",
-              border: "1px solid rgba(255,255,255,0.5)",
-              animation: `floatBubble ${b.dur} ${b.delay} ease-in-out infinite`,
-            }}
-          />
-        ))}
-
-        {/* Wave layer 1 — deepest, slowest */}
-        <svg
-          className="absolute bottom-0 left-0 w-full"
-          style={{ height: "45%", opacity: 0.55, animation: "wave1 7s ease-in-out infinite" }}
-          viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"
-        >
-          <path fill="#0284c7" fillOpacity="1"
-            d="M0,192L48,181.3C96,171,192,149,288,154.7C384,160,480,192,576,197.3C672,203,768,181,864,160C960,139,1056,117,1152,128C1248,139,1344,181,1392,202.7L1440,224L1440,320L0,320Z"
-          />
-        </svg>
-
-        {/* Wave layer 2 */}
-        <svg
-          className="absolute bottom-0 left-0 w-full"
-          style={{ height: "38%", opacity: 0.45, animation: "wave2 9s ease-in-out infinite" }}
-          viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"
-        >
-          <path fill="#0ea5e9" fillOpacity="1"
-            d="M0,256L60,234.7C120,213,240,171,360,165.3C480,160,600,192,720,197.3C840,203,960,181,1080,165.3C1200,149,1320,128,1380,117.3L1440,107L1440,320L0,320Z"
-          />
-        </svg>
-
-        {/* Wave layer 3 — topmost, fastest */}
-        <svg
-          className="absolute bottom-0 left-0 w-full"
-          style={{ height: "28%", opacity: 0.35, animation: "wave3 5s ease-in-out infinite" }}
-          viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"
-        >
-          <path fill="#38bdf8" fillOpacity="1"
-            d="M0,288L80,272C160,256,320,224,480,213.3C640,203,800,213,960,208C1120,203,1280,181,1360,170.7L1440,160L1440,320L0,320Z"
-          />
-        </svg>
-
-        {/* Horizontal light shimmer strip */}
-        <div className="absolute left-0 right-0" style={{
-          top: "38%", height: "3px", opacity: 0.4,
-          background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.9) 30%, rgba(186,230,255,0.7) 50%, rgba(255,255,255,0.9) 70%, transparent 100%)",
-          animation: "shimmer 4s linear infinite",
-          backgroundSize: "200% 100%",
-        }} />
-      </div>
-
-      {/* ── Video overlay (translucent on top of water bg) ── */}
+      {/* ── Video — full opacity, no blend mode ── */}
       <video
         loop autoPlay muted playsInline
         className="absolute top-0 left-0 w-full h-full object-cover z-10"
-        style={{ opacity: 0.60, mixBlendMode: "multiply" }}
+        style={{ opacity: 1 }}
       >
         <source src="/river.mp4" type="video/mp4" />
       </video>
 
+      {/* ── Subtle wave accent at very bottom only ── */}
+      <div className="absolute bottom-0 left-0 w-full z-20 pointer-events-none" style={{ height: "80px" }}>
+        <svg
+          className="absolute bottom-0 left-0 w-full"
+          style={{ height: "100%", opacity: 0.18, animation: "wave1 8s ease-in-out infinite" }}
+          viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"
+        >
+          <path fill="#38bdf8"
+            d="M0,40L120,34C240,28,480,16,720,20C960,24,1200,44,1320,54L1440,64L1440,80L0,80Z"
+          />
+        </svg>
+        <svg
+          className="absolute bottom-0 left-0 w-full"
+          style={{ height: "70%", opacity: 0.12, animation: "wave2 11s ease-in-out infinite" }}
+          viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"
+        >
+          <path fill="#7dd3fc"
+            d="M0,30L180,22C360,14,720,10,900,18C1080,26,1260,42,1440,50L1440,60L0,60Z"
+          />
+        </svg>
+      </div>
+
       {/* ── Dark gradient overlay for text readability ── */}
-      <div className="absolute inset-0 z-20"
-        style={{ background: "linear-gradient(135deg, rgba(0,30,60,0.55) 0%, rgba(0,15,40,0.25) 50%, rgba(0,40,80,0.15) 100%)" }}
+      <div className="absolute inset-0 z-30"
+        style={{ background: "linear-gradient(135deg, rgba(0,30,60,0.52) 0%, rgba(0,15,40,0.22) 50%, rgba(0,40,80,0.12) 100%)" }}
       />
 
       {/* ── Hero Content ── */}
-      <div className="absolute top-0 left-0 w-full h-full z-30 flex items-center justify-start text-white px-6 md:px-14">
+      <div className="absolute top-0 left-0 w-full h-full z-40 flex items-center justify-start text-white px-6 md:px-14">
         <div className="max-w-2xl text-left" style={{ perspective: "800px" }}>
 
           {/* Eyebrow tag */}
@@ -185,7 +128,7 @@ const HeroSection = () => {
       </div>
 
       {/* ── Status badges (top-right) ── */}
-      <div className="absolute top-8 right-6 z-30 hidden md:flex flex-col gap-2.5">
+      <div className="absolute top-8 right-6 z-40 hidden md:flex flex-col gap-2.5">
         {[
           { color: "bg-emerald-400", label: "Safe Zones Active" },
           { color: "bg-amber-400 animate-pulse", label: "Monitoring Live" },
@@ -201,7 +144,7 @@ const HeroSection = () => {
       </div>
 
       {/* ── Bottom Fact Bar ── */}
-      <div className="absolute bottom-0 left-0 w-full z-30 flex justify-between items-center px-6 py-3"
+      <div className="absolute bottom-0 left-0 w-full z-40 flex justify-between items-center px-6 py-3"
         style={{
           background: "linear-gradient(90deg, rgba(2,132,199,0.92) 0%, rgba(14,165,233,0.92) 100%)",
           backdropFilter: "blur(12px)",
