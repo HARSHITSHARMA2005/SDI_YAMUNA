@@ -43,7 +43,7 @@ const Navbar = () => {
 
           {/* ✅ Updated Signup Button */}
           <Link
-            to="/signup"
+            to="/login"
             className="text-xl bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 hover:scale-105 hover:shadow-md transition duration-300"
           >
             Sign Up

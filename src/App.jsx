@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Main from './pages/Main';
-import  Login  from './pages/Login';
-import  Signup  from './pages/Signup';
+import Auth from './pages/Auth';
 import GovDashboard from './pages/GovDashboard';
 import UserDashboard from './pages/userDashboard';
 import Navbar from './components/Navbar';
@@ -16,9 +15,8 @@ function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Main />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-
+        <Route path="/login" element={<Auth />} />
+        <Route path="/signup" element={<Auth />} />
         <Route
           path="/gov-dashboard"
           element={
