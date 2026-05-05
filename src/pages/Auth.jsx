@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-const BACKEND = import.meta.env.VITE_BACKEND_URL;
+const BACKEND = 'https://sdi-finals.onrender.com';
 
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 
@@ -22,17 +22,34 @@ export default function Auth() {
   const navigate = useNavigate();
   const [tab, setTab] = useState('login');
   const [showPw, setShowPw] = useState(false);
+  const [showGovCode, setShowGovCode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
   const [errors, setErrors] = useState({});
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpVerified, setOtpVerified] = useState(false);
-  const [otpValue, setOtpValue] = useState('');
-  const [sendingOtp, setSendingOtp] = useState(false);
-  const [verifyingOtp, setVerifyingOtp] = useState(false);
 
   const [login, setLogin] = useState({ email: '', password: '' });
-  const [signup, setSignup] = useState({ name: '', email: '', password: '', role: 'public' });
+  const [signup, setSignup] = useState({ name: '', email: '', password: '', role: 'public', govCode: '' });
+
+  // Handle Google OAuth callback token in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const role = params.get('role');
+    const name = params.get('name');
+    const error = params.get('error');
+
+    if (token && role) {
+      localStorage.setItem('token', token);
+      localStorage.setItem('role', role);
+      localStorage.setItem('name', name || '');
+      showToast('success', `Welcome ${name || ''}! Redirecting…`);
+      setTimeout(() => navigate(role === 'government' ? '/gov-dashboard' : '/user-dashboard'), 1200);
+    }
+
+    if (error) {
+      showToast('error', 'Google Sign-In failed. Please try again.');
+    }
+  }, []);
 
   const showToast = (type, msg) => {
     setToast({ type, msg });
@@ -42,9 +59,6 @@ export default function Auth() {
   const switchTab = (t) => {
     setTab(t);
     setErrors({});
-    setOtpSent(false);
-    setOtpVerified(false);
-    setOtpValue('');
   };
 
   // ── LOGIN ──────────────────────────────────────────────────
@@ -59,9 +73,10 @@ export default function Auth() {
     setLoading(true);
     try {
       const res = await axios.post(`${BACKEND}/api/auth/login`, login);
-      const { token, role } = res.data;
+      const { token, role, name } = res.data;
       localStorage.setItem('token', token);
       localStorage.setItem('role', role);
+      localStorage.setItem('name', name || '');
       showToast('success', 'Login successful! Redirecting…');
       setTimeout(() => navigate(role === 'government' ? '/gov-dashboard' : '/user-dashboard'), 1200);
     } catch (err) {
@@ -71,46 +86,21 @@ export default function Auth() {
     }
   };
 
-  // ── SEND OTP ───────────────────────────────────────────────
-  const handleSendOtp = async () => {
-    if (!signup.email) return setErrors({ email: 'Email is required' });
-    if (!isValidEmail(signup.email)) return setErrors({ email: 'Enter a valid email address' });
-    setErrors({});
-    setSendingOtp(true);
-    try {
-      await axios.post(`${BACKEND}/api/auth/send-otp`, { email: signup.email });
-      setOtpSent(true);
-      showToast('success', `OTP sent to ${signup.email}`);
-    } catch (err) {
-      showToast('error', err.response?.data?.message || 'Failed to send OTP.');
-    } finally {
-      setSendingOtp(false);
-    }
-  };
-
-  // ── VERIFY OTP ─────────────────────────────────────────────
-  const handleVerifyOtp = async () => {
-    if (!otpValue || otpValue.length !== 6) return setErrors({ otp: 'Enter the 6-digit OTP' });
-    setErrors({});
-    setVerifyingOtp(true);
-    try {
-      await axios.post(`${BACKEND}/api/auth/verify-otp`, { email: signup.email, otp: otpValue });
-      setOtpVerified(true);
-      showToast('success', 'Email verified! Complete your signup.');
-    } catch (err) {
-      showToast('error', err.response?.data?.message || 'Incorrect OTP.');
-    } finally {
-      setVerifyingOtp(false);
-    }
+  // ── GOOGLE LOGIN ───────────────────────────────────────────
+  const handleGoogleLogin = () => {
+    window.location.href = `${BACKEND}/api/auth/google`;
   };
 
   // ── SIGNUP ─────────────────────────────────────────────────
   const handleSignup = async () => {
     const e = {};
     if (!signup.name.trim() || signup.name.trim().length < 2) e.name = 'Full name must be at least 2 characters';
+    if (!signup.email) e.email = 'Email is required';
+    else if (!isValidEmail(signup.email)) e.email = 'Enter a valid email address';
     if (!signup.password) e.password = 'Password is required';
     else if (signup.password.length < 8) e.password = 'Minimum 8 characters';
     else if (getStrength(signup.password) < 2) e.password = 'Add uppercase, numbers or symbols';
+    if (signup.role === 'government' && !signup.govCode) e.govCode = 'Government access code is required';
     setErrors(e);
     if (Object.keys(e).length) return;
 
@@ -120,7 +110,7 @@ export default function Auth() {
       showToast('success', 'Account created! Please log in.');
       setTimeout(() => {
         switchTab('login');
-        setSignup({ name: '', email: '', password: '', role: 'public' });
+        setSignup({ name: '', email: '', password: '', role: 'public', govCode: '' });
       }, 1200);
     } catch (err) {
       showToast('error', err.response?.data?.message || 'Signup failed.');
@@ -144,7 +134,6 @@ export default function Auth() {
           position: relative;
           overflow: hidden;
         }
-
         .auth-bg {
           position: fixed;
           inset: 0;
@@ -156,10 +145,9 @@ export default function Auth() {
           animation: bgDrift 20s ease-in-out infinite alternate;
         }
         @keyframes bgDrift {
-          from { transform: scale(1) rotate(0deg); }
-          to   { transform: scale(1.08) rotate(2deg); }
+          from { transform: scale(1); }
+          to   { transform: scale(1.06); }
         }
-
         .auth-left {
           position: relative;
           z-index: 2;
@@ -170,7 +158,6 @@ export default function Auth() {
           padding: 64px 56px;
           border-right: 1px solid rgba(0,120,255,0.1);
         }
-
         .auth-right {
           position: relative;
           z-index: 2;
@@ -180,7 +167,6 @@ export default function Auth() {
           justify-content: center;
           padding: 48px 44px;
         }
-
         .live-badge {
           display: inline-flex;
           align-items: center;
@@ -209,7 +195,6 @@ export default function Auth() {
           color: #7dd3fc;
           font-weight: 600;
         }
-
         .hero-title {
           font-family: 'Cinzel', serif;
           font-size: clamp(28px, 3.5vw, 48px);
@@ -219,7 +204,6 @@ export default function Auth() {
           margin-bottom: 18px;
         }
         .hero-title .accent { color: #00d4ff; }
-
         .hero-sub {
           font-size: 15px;
           color: rgba(170,205,255,0.7);
@@ -228,7 +212,6 @@ export default function Auth() {
           margin-bottom: 40px;
           font-weight: 300;
         }
-
         .stats {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -257,7 +240,6 @@ export default function Auth() {
           letter-spacing: 0.5px;
           margin-top: 3px;
         }
-
         .poll-strip {
           display: flex;
           align-items: center;
@@ -280,8 +262,6 @@ export default function Auth() {
           font-size: 11.5px;
           color: rgba(255,180,140,0.75);
         }
-
-        /* Card */
         .card {
           width: 100%;
           max-width: 420px;
@@ -291,7 +271,6 @@ export default function Auth() {
           from { opacity:0; transform:translateY(22px); }
           to   { opacity:1; transform:translateY(0); }
         }
-
         .card-title {
           font-family: 'Cinzel', serif;
           font-size: 21px;
@@ -304,15 +283,13 @@ export default function Auth() {
           margin-bottom: 26px;
           font-weight: 300;
         }
-
-        /* Tabs */
         .tabs {
           display: flex;
           background: rgba(0,25,65,0.7);
           border: 1px solid rgba(0,90,200,0.18);
           border-radius: 12px;
           padding: 4px;
-          margin-bottom: 28px;
+          margin-bottom: 24px;
         }
         .tab {
           flex: 1;
@@ -324,7 +301,6 @@ export default function Auth() {
           font-family: 'Nunito', sans-serif;
           cursor: pointer;
           transition: all 0.3s;
-          letter-spacing: 0.3px;
         }
         .tab.on {
           background: linear-gradient(135deg, #0055cc, #0099ff);
@@ -336,8 +312,32 @@ export default function Auth() {
           color: rgba(140,190,255,0.55);
         }
         .tab.off:hover { color: #7dd3fc; }
-
-        /* Inputs */
+        .google-btn {
+          width: 100%;
+          padding: 12px;
+          border-radius: 10px;
+          border: 1px solid rgba(255,255,255,0.15);
+          background: rgba(255,255,255,0.06);
+          color: #e0f0ff;
+          font-size: 14px;
+          font-weight: 600;
+          font-family: 'Nunito', sans-serif;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          transition: all 0.3s;
+          margin-bottom: 6px;
+        }
+        .google-btn:hover {
+          background: rgba(255,255,255,0.12);
+          border-color: rgba(255,255,255,0.25);
+          transform: translateY(-1px);
+        }
+        .google-icon {
+          width: 18px; height: 18px;
+        }
         .fg { margin-bottom: 16px; }
         .fl {
           display: block;
@@ -367,49 +367,6 @@ export default function Auth() {
         }
         .fi.err { border-color: rgba(239,68,68,0.55); }
         .ferr { font-size: 11.5px; color: #f87171; margin-top: 4px; }
-
-        /* OTP row */
-        .otp-row {
-          display: flex;
-          gap: 8px;
-          align-items: flex-start;
-        }
-        .otp-row .fi { flex: 1; letter-spacing: 4px; font-size: 16px; }
-        .otp-send-btn {
-          padding: 12px 14px;
-          border-radius: 9px;
-          border: 1px solid rgba(0,150,255,0.3);
-          background: rgba(0,60,140,0.3);
-          color: #7dd3fc;
-          font-size: 13px;
-          font-weight: 600;
-          font-family: 'Nunito', sans-serif;
-          cursor: pointer;
-          white-space: nowrap;
-          transition: all 0.25s;
-          flex-shrink: 0;
-        }
-        .otp-send-btn:hover:not(:disabled) {
-          background: rgba(0,80,180,0.5);
-          border-color: rgba(0,200,255,0.45);
-        }
-        .otp-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        /* Verified badge */
-        .verified-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 12px;
-          color: #86efac;
-          background: rgba(5,50,20,0.5);
-          border: 1px solid rgba(34,197,94,0.3);
-          border-radius: 6px;
-          padding: 5px 10px;
-          margin-top: 4px;
-        }
-
-        /* Role pills */
         .role-row { display: flex; gap: 10px; margin-bottom: 16px; }
         .role-pill {
           flex: 1;
@@ -431,8 +388,6 @@ export default function Auth() {
           color: #7dd3fc;
           box-shadow: 0 0 12px rgba(0,140,255,0.15);
         }
-
-        /* Password wrapper */
         .pw-wrap { position: relative; }
         .pw-toggle {
           position: absolute;
@@ -445,12 +400,8 @@ export default function Auth() {
           color: rgba(100,155,220,0.6);
           font-size: 15px;
           padding: 0;
-          display: flex;
-          align-items: center;
         }
         .pw-toggle:hover { color: #7dd3fc; }
-
-        /* Strength bar */
         .str-bar {
           height: 3px;
           background: rgba(0,60,140,0.25);
@@ -463,12 +414,7 @@ export default function Auth() {
           border-radius: 3px;
           transition: width 0.4s, background 0.4s;
         }
-        .str-label {
-          font-size: 11px;
-          margin-top: 3px;
-        }
-
-        /* Submit */
+        .str-label { font-size: 11px; margin-top: 3px; }
         .sub-btn {
           width: 100%;
           padding: 13px;
@@ -483,24 +429,12 @@ export default function Auth() {
           transition: all 0.3s;
           box-shadow: 0 4px 18px rgba(0,100,255,0.32);
           margin-top: 6px;
-          letter-spacing: 0.3px;
           position: relative;
           overflow: hidden;
         }
-        .sub-btn::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-          transform: translateX(-100%);
-          transition: transform 0.5s;
-        }
-        .sub-btn:hover::after { transform: translateX(100%); }
         .sub-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 26px rgba(0,120,255,0.45); }
         .sub-btn:active { transform: translateY(0); }
         .sub-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
-
-        /* Toast */
         .toast {
           position: fixed;
           top: 22px; right: 22px;
@@ -531,14 +465,21 @@ export default function Auth() {
           from { opacity:0; transform:translateX(36px); }
           to   { opacity:1; transform:translateX(0); }
         }
-
         .divider {
           display: flex; align-items: center; gap: 10px;
           margin: 18px 0;
         }
         .div-line { flex:1; height:1px; background:rgba(0,80,180,0.15); }
         .div-txt { font-size:11px; color:rgba(90,140,200,0.4); letter-spacing:1px; }
-
+        .gov-note {
+          font-size: 12px;
+          color: rgba(250,200,100,0.7);
+          background: rgba(180,120,0,0.1);
+          border: 1px solid rgba(250,180,0,0.2);
+          border-radius: 8px;
+          padding: 8px 12px;
+          margin-bottom: 14px;
+        }
         @media (max-width: 768px) {
           .auth-left { display: none; }
           .auth-right { width: 100%; padding: 36px 24px; }
@@ -561,18 +502,15 @@ export default function Auth() {
             <div className="live-dot" />
             <span className="live-text">Live Monitoring Active</span>
           </div>
-
           <h1 className="hero-title">
             Safeguarding the<br />
             <span className="accent">Sacred Yamuna</span>
           </h1>
-
           <p className="hero-sub">
             Real-time pollution tracking, citizen reporting, and government
             response — all in one platform dedicated to restoring India's
             most revered river.
           </p>
-
           <div className="stats">
             <div className="stat">
               <div className="stat-val">48+</div>
@@ -591,7 +529,6 @@ export default function Auth() {
               <div className="stat-lbl">Active Tracking</div>
             </div>
           </div>
-
           <div className="poll-strip">
             <div className="poll-item">
               <div className="poll-dot" style={{ background: '#ef4444', boxShadow: '0 0 7px #ef4444' }} />
@@ -623,7 +560,6 @@ export default function Auth() {
                 : 'Join the Yamuna monitoring network'}
             </p>
 
-            {/* Tabs */}
             <div className="tabs">
               <button className={`tab ${tab === 'login' ? 'on' : 'off'}`} onClick={() => switchTab('login')}>
                 Login
@@ -631,6 +567,21 @@ export default function Auth() {
               <button className={`tab ${tab === 'signup' ? 'on' : 'off'}`} onClick={() => switchTab('signup')}>
                 Sign Up
               </button>
+            </div>
+
+            {/* Google Button */}
+            <button className="google-btn" onClick={handleGoogleLogin}>
+              <svg className="google-icon" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              Continue with Google
+            </button>
+
+            <div className="divider">
+              <div className="div-line" /><span className="div-txt">OR</span><div className="div-line" />
             </div>
 
             {/* ── LOGIN FORM ── */}
@@ -644,10 +595,10 @@ export default function Auth() {
                     placeholder="you@example.com"
                     value={login.email}
                     onChange={e => setLogin({ ...login, email: e.target.value })}
+                    onKeyDown={e => e.key === 'Enter' && handleLogin()}
                   />
                   {errors.email && <div className="ferr">{errors.email}</div>}
                 </div>
-
                 <div className="fg">
                   <label className="fl">Password</label>
                   <div className="pw-wrap">
@@ -666,20 +617,12 @@ export default function Auth() {
                   </div>
                   {errors.password && <div className="ferr">{errors.password}</div>}
                 </div>
-
                 <button className="sub-btn" onClick={handleLogin} disabled={loading}>
                   {loading ? 'Signing in…' : 'Sign In'}
                 </button>
-
-                <div className="divider">
-                  <div className="div-line" /><span className="div-txt">OR</span><div className="div-line" />
-                </div>
-                <p style={{ textAlign: 'center', fontSize: 13, color: 'rgba(130,180,240,0.6)' }}>
+                <p style={{ textAlign: 'center', fontSize: 13, color: 'rgba(130,180,240,0.6)', marginTop: 16 }}>
                   Don't have an account?{' '}
-                  <span
-                    onClick={() => switchTab('signup')}
-                    style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 600 }}
-                  >
+                  <span onClick={() => switchTab('signup')} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 600 }}>
                     Sign Up
                   </span>
                 </p>
@@ -689,155 +632,104 @@ export default function Auth() {
             {/* ── SIGNUP FORM ── */}
             {tab === 'signup' && (
               <>
-                {/* Step 1 — Email + OTP */}
-                {!otpVerified && (
-                  <>
-                    <div className="fg">
-                      <label className="fl">Email Address</label>
-                      <div className="otp-row">
-                        <input
-                          className={`fi ${errors.email ? 'err' : ''}`}
-                          type="email"
-                          placeholder="you@example.com"
-                          value={signup.email}
-                          onChange={e => setSignup({ ...signup, email: e.target.value })}
-                          disabled={otpSent}
-                        />
-                        <button
-                          className="otp-send-btn"
-                          onClick={handleSendOtp}
-                          disabled={sendingOtp || otpSent}
-                        >
-                          {sendingOtp ? 'Sending…' : otpSent ? 'Sent ✓' : 'Send OTP'}
-                        </button>
+                <div className="fg">
+                  <label className="fl">Full Name</label>
+                  <input
+                    className={`fi ${errors.name ? 'err' : ''}`}
+                    type="text"
+                    placeholder="Your full name"
+                    value={signup.name}
+                    onChange={e => setSignup({ ...signup, name: e.target.value })}
+                  />
+                  {errors.name && <div className="ferr">{errors.name}</div>}
+                </div>
+                <div className="fg">
+                  <label className="fl">Email Address</label>
+                  <input
+                    className={`fi ${errors.email ? 'err' : ''}`}
+                    type="email"
+                    placeholder="you@example.com"
+                    value={signup.email}
+                    onChange={e => setSignup({ ...signup, email: e.target.value })}
+                  />
+                  {errors.email && <div className="ferr">{errors.email}</div>}
+                </div>
+                <div className="fg">
+                  <label className="fl">Password</label>
+                  <div className="pw-wrap">
+                    <input
+                      className={`fi ${errors.password ? 'err' : ''}`}
+                      type={showPw ? 'text' : 'password'}
+                      placeholder="Min. 8 characters"
+                      value={signup.password}
+                      onChange={e => setSignup({ ...signup, password: e.target.value })}
+                      style={{ paddingRight: 40 }}
+                    />
+                    <button className="pw-toggle" onClick={() => setShowPw(!showPw)}>
+                      {showPw ? '🙈' : '👁️'}
+                    </button>
+                  </div>
+                  {signup.password && (
+                    <>
+                      <div className="str-bar">
+                        <div className="str-fill" style={{ width: `${(pwStrength / 4) * 100}%`, background: strengthColor[pwStrength - 1] || '#ef4444' }} />
                       </div>
-                      {errors.email && <div className="ferr">{errors.email}</div>}
-                    </div>
-
-                    {otpSent && (
-                      <div className="fg">
-                        <label className="fl">Enter OTP</label>
-                        <div className="otp-row">
-                          <input
-                            className={`fi ${errors.otp ? 'err' : ''}`}
-                            type="text"
-                            maxLength={6}
-                            placeholder="• • • • • •"
-                            value={otpValue}
-                            onChange={e => setOtpValue(e.target.value.replace(/\D/g, ''))}
-                          />
-                          <button
-                            className="otp-send-btn"
-                            onClick={handleVerifyOtp}
-                            disabled={verifyingOtp}
-                          >
-                            {verifyingOtp ? 'Checking…' : 'Verify'}
-                          </button>
-                        </div>
-                        {errors.otp && <div className="ferr">{errors.otp}</div>}
-                        <span
-                          style={{ fontSize: 12, color: 'rgba(100,160,220,0.55)', cursor: 'pointer', marginTop: 4, display: 'inline-block' }}
-                          onClick={() => { setOtpSent(false); setOtpValue(''); }}
-                        >
-                          ← Change email
-                        </span>
+                      <div className="str-label" style={{ color: strengthColor[pwStrength - 1] || '#ef4444' }}>
+                        {strengthLabel[pwStrength - 1] || 'Too weak'}
                       </div>
-                    )}
+                    </>
+                  )}
+                  {errors.password && <div className="ferr">{errors.password}</div>}
+                </div>
+                <div className="fg">
+                  <label className="fl">Account Type</label>
+                  <div className="role-row">
+                    <button
+                      className={`role-pill ${signup.role === 'public' ? 'sel' : ''}`}
+                      onClick={() => setSignup({ ...signup, role: 'public', govCode: '' })}
+                    >
+                      🌊 Citizen
+                    </button>
+                    <button
+                      className={`role-pill ${signup.role === 'government' ? 'sel' : ''}`}
+                      onClick={() => setSignup({ ...signup, role: 'government' })}
+                    >
+                      🏛️ Government
+                    </button>
+                  </div>
+                </div>
 
-                    {!otpSent && (
-                      <p style={{ fontSize: 12.5, color: 'rgba(120,170,230,0.5)', marginTop: -6, marginBottom: 16 }}>
-                        We'll send a 6-digit OTP to verify your email is real.
-                      </p>
-                    )}
-                  </>
-                )}
-
-                {/* Step 2 — Rest of form after OTP verified */}
-                {otpVerified && (
+                {signup.role === 'government' && (
                   <>
-                    <div className="verified-badge" style={{ marginBottom: 18 }}>
-                      ✓ {signup.email} verified
+                    <div className="gov-note">
+                      🔒 Government accounts require an official access code provided by the system administrator.
                     </div>
-
                     <div className="fg">
-                      <label className="fl">Full Name</label>
-                      <input
-                        className={`fi ${errors.name ? 'err' : ''}`}
-                        type="text"
-                        placeholder="Your full name"
-                        value={signup.name}
-                        onChange={e => setSignup({ ...signup, name: e.target.value })}
-                      />
-                      {errors.name && <div className="ferr">{errors.name}</div>}
-                    </div>
-
-                    <div className="fg">
-                      <label className="fl">Password</label>
+                      <label className="fl">Government Access Code</label>
                       <div className="pw-wrap">
                         <input
-                          className={`fi ${errors.password ? 'err' : ''}`}
-                          type={showPw ? 'text' : 'password'}
-                          placeholder="Min. 8 characters"
-                          value={signup.password}
-                          onChange={e => setSignup({ ...signup, password: e.target.value })}
+                          className={`fi ${errors.govCode ? 'err' : ''}`}
+                          type={showGovCode ? 'text' : 'password'}
+                          placeholder="Enter access code"
+                          value={signup.govCode}
+                          onChange={e => setSignup({ ...signup, govCode: e.target.value })}
                           style={{ paddingRight: 40 }}
                         />
-                        <button className="pw-toggle" onClick={() => setShowPw(!showPw)}>
-                          {showPw ? '🙈' : '👁️'}
+                        <button className="pw-toggle" onClick={() => setShowGovCode(!showGovCode)}>
+                          {showGovCode ? '🙈' : '👁️'}
                         </button>
                       </div>
-                      {signup.password && (
-                        <>
-                          <div className="str-bar">
-                            <div
-                              className="str-fill"
-                              style={{
-                                width: `${(pwStrength / 4) * 100}%`,
-                                background: strengthColor[pwStrength - 1] || '#ef4444',
-                              }}
-                            />
-                          </div>
-                          <div className="str-label" style={{ color: strengthColor[pwStrength - 1] || '#ef4444' }}>
-                            {strengthLabel[pwStrength - 1] || 'Too weak'}
-                          </div>
-                        </>
-                      )}
-                      {errors.password && <div className="ferr">{errors.password}</div>}
+                      {errors.govCode && <div className="ferr">{errors.govCode}</div>}
                     </div>
-
-                    <div className="fg">
-                      <label className="fl">Account Type</label>
-                      <div className="role-row">
-                        <button
-                          className={`role-pill ${signup.role === 'public' ? 'sel' : ''}`}
-                          onClick={() => setSignup({ ...signup, role: 'public' })}
-                        >
-                          🌊 Citizen
-                        </button>
-                        <button
-                          className={`role-pill ${signup.role === 'government' ? 'sel' : ''}`}
-                          onClick={() => setSignup({ ...signup, role: 'government' })}
-                        >
-                          🏛️ Government
-                        </button>
-                      </div>
-                    </div>
-
-                    <button className="sub-btn" onClick={handleSignup} disabled={loading}>
-                      {loading ? 'Creating account…' : 'Create Account'}
-                    </button>
                   </>
                 )}
 
-                <div className="divider">
-                  <div className="div-line" /><span className="div-txt">OR</span><div className="div-line" />
-                </div>
-                <p style={{ textAlign: 'center', fontSize: 13, color: 'rgba(130,180,240,0.6)' }}>
+                <button className="sub-btn" onClick={handleSignup} disabled={loading}>
+                  {loading ? 'Creating account…' : 'Create Account'}
+                </button>
+                <p style={{ textAlign: 'center', fontSize: 13, color: 'rgba(130,180,240,0.6)', marginTop: 16 }}>
                   Already have an account?{' '}
-                  <span
-                    onClick={() => switchTab('login')}
-                    style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 600 }}
-                  >
+                  <span onClick={() => switchTab('login')} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 600 }}>
                     Sign In
                   </span>
                 </p>

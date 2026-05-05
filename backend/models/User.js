@@ -20,6 +20,10 @@ const userSchema = new mongoose.Schema(
       enum: ['public', 'government'],
       default: 'public',
     },
+    googleId: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 );
