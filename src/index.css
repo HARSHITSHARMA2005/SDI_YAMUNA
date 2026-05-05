@@ -1,1 +1,104 @@
 @import "tailwindcss";
+
+/* ── Global 3D Water & Animation Keyframes ── */
+
+@keyframes wave1 {
+  0%   { transform: translateX(0) scaleY(1); }
+  50%  { transform: translateX(-3%) scaleY(1.05); }
+  100% { transform: translateX(0) scaleY(1); }
+}
+@keyframes wave2 {
+  0%   { transform: translateX(0) scaleY(1); }
+  50%  { transform: translateX(3%) scaleY(0.97); }
+  100% { transform: translateX(0) scaleY(1); }
+}
+@keyframes wave3 {
+  0%   { transform: translateX(0) scaleY(1); }
+  50%  { transform: translateX(-2%) scaleY(1.08); }
+  100% { transform: translateX(0) scaleY(1); }
+}
+
+@keyframes floatBubble {
+  0%   { transform: translateY(0) scale(1); opacity: 0.4; }
+  50%  { transform: translateY(-18px) scale(1.08); opacity: 0.7; }
+  100% { transform: translateY(0) scale(1); opacity: 0.4; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes fadeSlide {
+  0%   { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ripplePulse {
+  0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(56,189,248,0.5); }
+  70%  { transform: scale(1); box-shadow: 0 0 0 18px rgba(56,189,248,0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(56,189,248,0); }
+}
+
+@keyframes gradientDrift {
+  0%,100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+@keyframes heroFadeIn {
+  0%   { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Utility classes ── */
+
+.fact-text {
+  animation: fadeSlide 0.5s ease forwards;
+}
+
+.card-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.4s ease;
+}
+.card-3d:hover {
+  transform: translateY(-10px) rotateX(4deg) rotateY(-2deg) scale(1.03);
+  box-shadow: 0 30px 60px rgba(14,165,233,0.3), 0 0 40px rgba(56,189,248,0.12);
+}
+
+.btn-3d {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+.btn-3d::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  transition: left 0.5s ease;
+}
+.btn-3d:hover::before {
+  left: 150%;
+}
+.btn-3d:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 14px 32px rgba(14,165,233,0.5), 0 5px 0 rgba(7,89,133,0.5);
+}
+.btn-3d:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 4px 10px rgba(14,165,233,0.3);
+}
+
+.glass-card {
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 8px 32px rgba(14,165,233,0.12);
+}
+
+.hero-text-in {
+  animation: heroFadeIn 0.9s cubic-bezier(0.23,1,0.32,1) both;
+}
